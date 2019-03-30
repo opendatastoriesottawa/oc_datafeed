@@ -12,6 +12,7 @@ import config as cfg
 
 
 
+
 #note - times are -2 minutes from actual schedule time
 #list_times95e_3047 = ['9:53','10:23','10:54']
 #list_times95e_3005 = ['10:28','10:58','11:29']
@@ -25,8 +26,9 @@ counter = 0
 
 def Main():
     
+    mysqlkeys = {'host':cfg.mysql_host,'user':cfg.mysql_user,'pass':cfg.mysql_pass}
     schedule.clear()
-    ocf.sched_oc_call(big_list, counter, cfg.app_id, cfg.app_key, cfg.acc_url, cfg.fpath)
+    ocf.sched_oc_call(big_list, counter, cfg.app_id, cfg.app_key, cfg.acc_url, cfg.fpath, mysqlkeys)
     
    
 Main()
@@ -38,11 +40,8 @@ Program Specs
 Should: take in a list of times, routes etc.
 Calculate the first time, run the scheduler on this
 The job run is always the same - make API call to OCT, then save returning value to DB
-
-
-
-
 """
+
 
 
 #import gc

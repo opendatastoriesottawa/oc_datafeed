@@ -15,10 +15,13 @@ import random
 import pandas as pd
 import schedule_next_job as sj
 import datetime
-import write_to_text
+#import write_to_text
+import read_json as rj
+import mysql_connection as mysql
 
 #load stops
 stops = pd.read_csv('D:/Dougall/OpenDataStories/Posts/OC_Transpo/google_transit/stops.txt')
+stops_tway = pd.read_csv('D:/Dougall/OpenDataStories/Posts/OC_Transpo/google_transit/stops_transitway.txt')
 
 #Function that outputs a JSON dict after making the call to the OC Transpo api
 def get_trip_from_stop(route, stop, app_id, app_key, acc_url):
@@ -62,37 +65,82 @@ def random_stop():
     return _stop
 
 
+#collecting data on transitway stops
+def transitway_stop(idx):
+    stop = stops_tway.at[idx, 'stop_code']
+    return stop
+    
+    
+
 
 #the job to called - creates and appends to a selected list.
 #sleeps for a specified period of time
     
-def oc_job(xsec, _list, app_id, app_key, acc_url,fpath):
+def oc_job(xsec, _list, app_id, app_key, acc_url,fpath, mysqlkeys, idx):
     print("going to sleep for {}".format(xsec))
     time.sleep(xsec)
+    
+    #timing
     #just produce a list of json structures
-    _json = get_trip_from_stop_all(random_stop(), app_id, app_key, acc_url)
-    write_to_text.write_to_text(fpath,str(_json))
+    try:
+        #_json = get_trip_from_stop_all(random_stop(), app_id, app_key, acc_url)
+        _json = get_trip_from_stop_all(transitway_stop(idx), app_id, app_key, acc_url)
+    except:
+        print("failed to load stop json")
+        _json = []
+    
+    
+    #write_to_text.write_to_text(fpath,str(_json))
+    try:
+        _dict = rj.extract_json(_json)
+    except:
+        print("failed to extract json")
+        _dict = {}
+    mysql.data_to_db(_dict, mysqlkeys)  
+    
     #_list.append(get_trip_from_stop_all(random_stop(), app_id, app_key, acc_url))
-    print("appended to list")
     return schedule.CancelJob  
 
 
 #Use schedule_next_job functions here
-def sched_oc_call(_list, counter, app_id, app_key, acc_url,fpath):
-    
+def sched_oc_call(_list, counter, app_id, app_key, acc_url,fpath, mysqlkeys):
+    idx = 0 #index for transitway stops
     now = datetime.datetime.now()
     midnight = datetime.datetime.combine(now.date(), datetime.time())
-    #_list = []
-    while True:
-        _time = int((now - midnight).seconds)
-        next_sleep = sj.next_sleep(counter, _time)
-        oc_job(next_sleep, _list, app_id, app_key, acc_url, fpath)
-        counter = sj.increase_count(counter)
+    _time = int((now - midnight).seconds)
 
+    while True:
+        #next_sleep = sj.next_sleep(counter, _time)
+        next_sleep = 8 #for transitway, set time between calls to 8 seconds
+        if idx >= len(stops_tway): #reset when larger than index
+            idx = 0
+        oc_job(next_sleep, _list, app_id, app_key, acc_url, fpath, mysqlkeys,idx)
+        idx += 1
+        
+        counter = sj.increase_count(counter)
+        if counter == 9000:
+            print('counter at 90%')
+        
+        now = datetime.datetime.now()
+        _time = int((now - midnight).seconds)
+       
         if counter == 10000:
-            _seconds = _time
-            counter = sj.sleep_until_midnight(_seconds, counter)
+            print('counter hit 10000')
+            now = datetime.datetime.now()
+            midnight = datetime.datetime.combine(now.date(), datetime.time())
+            _time = int((now - midnight).seconds)
+            counter = sj.sleep_until_midnight(_time, counter)
             counter = sj.reset_counter()
+            
+        now = datetime.datetime.now()
+        midnight = datetime.datetime.combine(now.date(), datetime.time())
+        _time = int((now - midnight).seconds)         #deal with midnight
+        if _time > 0 and _time < 36 and counter > 4:
+            counter = sj.reset_counter()
+                
+
+
+        
     return
 
 

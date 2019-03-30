@@ -22,7 +22,6 @@ def time_period(_time):
     midpeak_periods = [[23400,26999],[34200,55799],[63000,70200]]
     
     seconds = _time
- 
     for elem in peak_periods:
         if seconds > elem[0] and seconds < elem[1]:
             return "peak"
@@ -41,7 +40,6 @@ def reset_counter():
 def sleep_until_midnight(_seconds, counter):
     final = 86399 #seconds from midnight to 11:59:59
     _sleep = (final - _seconds) + 1
-
     time.sleep(_sleep)
     return
  
