@@ -8,117 +8,144 @@ Connection to a MySQL database
 """
 import pymysql.cursors
 
-from datetime import datetime
+from datetime import datetime, date
+import time
+
 
 dt = datetime.now()
 
 
 
 
-def __mysql_connect(_dict, mysqlkeys):
-    if len(_dict) == 0:
-        return
-    #setup each variable here
-    try:
-        _datetime = _dict['datetime']
-    except:
-        _datetime = None
+def __mysql_connect(_listdict, mysqlkeys):
+
     
-    _error = _dict['Error']
+    #use these empty lists to populate sql commands/values
+    #sqlcomms = []
+    sqlvals = []
+
+    for _dict in _listdict:
+
+        if len(_dict) == 0:
+            return
+        #setup each variable here
+        try:
+            _datetime = _dict['datetime']
+        except:
+            _datetime = None
     
-    StopNo = None
-    try:
-        if _dict['StopNo'] is not None and _dict['StopNo'] is not '':
-            StopNo = int(_dict['StopNo'])
-    except:
+        _error = _dict['Error']
+    
         StopNo = None
+        try:
+            if _dict['StopNo'] is not None and _dict['StopNo'] is not '':
+                StopNo = int(_dict['StopNo'])
+        except:
+            StopNo = None
     
-    try:
-        StopDescription = _dict['StopDescription']
-    except:
-        StopDescription = None
+        try:
+            StopDescription = _dict['StopDescription']
+        except:
+            StopDescription = None
     
-    try:
-        Direction = _dict['Direction']
-    except:
-        Direction = None
+        try:
+            Direction = _dict['Direction']
+        except:
+            Direction = None
     
-    DirectionID = None
-    try:
-        if _dict['DirectionID'] is not None and _dict['DirectionID'] is not '':
-            DirectionID = int(_dict['DirectionID'])
-    except:
         DirectionID = None
+        try:
+            if _dict['DirectionID'] is not None and _dict['DirectionID'] is not '':
+                DirectionID = int(_dict['DirectionID'])
+        except:
+            DirectionID = None
     
-    try:    
-        RouteHeading = _dict['RouteHeading']
-    except:
-        RouteHeading = None
+        try:    
+            RouteHeading = _dict['RouteHeading']
+        except:
+            RouteHeading = None
     
-    RouteNo = None
-    try:
-        if _dict['RouteNo'] is not None and _dict['RouteNo'] is not '':
-            RouteNo = int(_dict['RouteNo'])
-    except:
         RouteNo = None
+        try:
+            if _dict['RouteNo'] is not None and _dict['RouteNo'] is not '':
+                RouteNo = int(_dict['RouteNo'])
+        except:
+            RouteNo = None
         
-    AdjustedScheduleTime = None
-    try:
-        if _dict['AdjustedScheduleTime'] is not None and _dict['AdjustedScheduleTime'] is not '':
-            AdjustedScheduleTime = int(_dict['AdjustedScheduleTime'])
-    except:
         AdjustedScheduleTime = None
+        try:
+            if _dict['AdjustedScheduleTime'] is not None and _dict['AdjustedScheduleTime'] is not '':
+                AdjustedScheduleTime = int(_dict['AdjustedScheduleTime'])
+        except:
+            AdjustedScheduleTime = None
      
-    AdjustmentAge = None
-    try:
-        if _dict['AdjustmentAge'] is not None and _dict['AdjustmentAge'] is not '':
-            AdjustmentAge = float(_dict['AdjustmentAge'])
-    except:
         AdjustmentAge = None
-    try:    
-        BusType = _dict['BusType']
-    except:
-        BusType = None
+        try:
+            if _dict['AdjustmentAge'] is not None and _dict['AdjustmentAge'] is not '':
+                AdjustmentAge = float(_dict['AdjustmentAge'])
+        except:
+            AdjustmentAge = None
+        try:    
+            BusType = _dict['BusType']
+        except:
+            BusType = None
     
-    GPSSpeed = None
-    try:
-        if _dict['GPSSpeed'] is not None and _dict['GPSSpeed'] is not '':
-            GPSSpeed = float(_dict['GPSSpeed'])
-    except:
+        GPSSpeed = None
+        try:
+            if _dict['GPSSpeed'] is not None and _dict['GPSSpeed'] is not '':
+                GPSSpeed = float(_dict['GPSSpeed'])
+        except:
             GPSSpeed = None
             
-    try:
-        LastTripOfSchedule = _dict['LastTripOfSchedule']
-    except:
-        LastTripOfSchedule = None
+        try:
+            LastTripOfSchedule = _dict['LastTripOfSchedule']
+        except:
+            LastTripOfSchedule = None
     
-    Latitude = None
-    try:
-        if _dict['Latitude'] is not None and _dict['Latitude'] is not '':
-            Latitude = float(_dict['Latitude'])
-    except:
         Latitude = None
+        try:
+            if _dict['Latitude'] is not None and _dict['Latitude'] is not '':
+                Latitude = float(_dict['Latitude'])
+        except:
+            Latitude = None
     
-    Longitude = None
-    try:
-        if _dict['Longitude'] is not None and _dict['Longitude'] is not '':
-            Longitude = float(_dict['Longitude'])
-    except:
         Longitude = None
+        try:
+            if _dict['Longitude'] is not None and _dict['Longitude'] is not '':
+                Longitude = float(_dict['Longitude'])
+        except:
+            Longitude = None
     
-    try:    
-        TripDestination = _dict['TripDestination']
-    except:
-        TripDestination = None
+        try:    
+            TripDestination = _dict['TripDestination']
+        except:
+            TripDestination = None
     
-    TripStartTime = None
-    try:
-        if _dict['TripStartTime'] is not None and _dict['TripStartTime'] is not '':
-            TripStartTime = datetime.strptime(_dict['TripStartTime'], '%H:%M').time()
-    except:
         TripStartTime = None
+        try:
+            if _dict['TripStartTime'] is not None and _dict['TripStartTime'] is not '':
+                TripStartTime = datetime.strptime(_dict['TripStartTime'], '%H:%M').time()
+        except:
+            TripStartTime = None
+
+
+
+        #create the mysql commands here in a list
+        #INSERT INTO trips
+        sql = "(_datetime, _error, StopNo, StopDescription, Direction, DirectionID, RouteHeading, RouteNo, AdjustedScheduleTime, AdjustmentAge, BusType, GPSSpeed, LastTripOfSchedule, Latitude, Longitude, TripDestination, TripStartTime, expSet) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        values = (_datetime, _error, StopNo, StopDescription, Direction, DirectionID, RouteHeading, RouteNo, AdjustedScheduleTime, AdjustmentAge, BusType, GPSSpeed, LastTripOfSchedule, Latitude, Longitude, TripDestination, TripStartTime, False)
+        
+       # sqlcomms.append(sql)
+        sqlvals.append(values)
     
-    
+    #upd0 = ""
+    #for j in range(len(sqlcomms)):
+    #    if j < len(sqlcomms):
+    #        sqlcomms[j] = "{},".format(sqlcomms[j])
+    #    upd0 = "{} {}".format(upd0, sqlcomms[j])
+
+    #finish writing upd0
+    upd0 = "INSERT INTO trips {}".format(sql)
     
     # Connect to the database
     connection = pymysql.connect(host=mysqlkeys['host'],
@@ -127,28 +154,33 @@ def __mysql_connect(_dict, mysqlkeys):
                                  db='oc_datafeed',
                                  charset='utf8mb4',
                                  cursorclass=pymysql.cursors.DictCursor)
-    
-
     try:
         with connection.cursor() as cursor:
-            # Create a new record
-            sql = "INSERT INTO trips_tway (_datetime, _error, StopNo, StopDescription, Direction, DirectionID, RouteHeading, RouteNo, AdjustedScheduleTime, AdjustmentAge, BusType, GPSSpeed, LastTripOfSchedule, Latitude, Longitude, TripDestination, TripStartTime, expSet) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            values = (_datetime, _error, StopNo, StopDescription, Direction, DirectionID, RouteHeading, RouteNo, AdjustedScheduleTime, AdjustmentAge, BusType, GPSSpeed, LastTripOfSchedule, Latitude, Longitude, TripDestination, TripStartTime, False)
-            cursor.execute(sql, values)
+            # Create new records
+            start0 = time.time()
+            cursor.executemany(upd0, sqlvals)
+            timer0 = time.time() - start
+            print("SQL upd0 cursor took {} seconds".format(timer0))
             #make updates to the table
-            upd1 = """UPDATE trips_tway SET expectedTime = _datetime + INTERVAL AdjustedScheduleTime MINUTE WHERE expSet=FALSE"""
-            upd2 = """UPDATE trips_tway SET expectedTime_nd = TIME(expectedTime) WHERE expSet=FALSE"""
-            upd3 = """UPDATE trips_tway SET expectedTime_ndh = HOUR(expectedTime_nd) WHERE expSet=FALSE"""
-            upd4 = """UPDATE trips_tway SET expectedTime_ndm = MINUTE(expectedTime_nd) WHERE expSet=FALSE"""
-            upd5 = """ UPDATE trips_tway SET expSet=TRUE """
+            start1 = time.time()
+            upd1 = """UPDATE trips SET expectedTime = _datetime + INTERVAL AdjustedScheduleTime MINUTE WHERE expSet=FALSE"""
+            upd2 = """UPDATE trips SET expectedTime_nd = TIME(expectedTime) WHERE expSet=FALSE"""
+            upd3 = """UPDATE trips SET expectedTime_ndh = HOUR(expectedTime_nd) WHERE expSet=FALSE"""
+            upd4 = """UPDATE trips SET expectedTime_ndm = MINUTE(expectedTime_nd) WHERE expSet=FALSE"""
+            upd5 = """ UPDATE trips SET expSet=TRUE where expSet=FALSE """
             cursor.execute(upd1)
             cursor.execute(upd2)
             cursor.execute(upd3)
             cursor.execute(upd4)
             cursor.execute(upd5)
+            timer1 = time.time() - start1
+            print("SQL upd1-5 cursor took {} seconds".format(timer1))
         # connection is not autocommit by default. So you must commit to save
         # your changes.
+        start2 = time.time()
         connection.commit()
+        timer2 = time.time() - start
+        print("SQL connection took {} seconds".format(timer2))
 
     #    with connection.cursor() as cursor:
     #        # Read a single record
@@ -156,15 +188,19 @@ def __mysql_connect(_dict, mysqlkeys):
     #        cursor.execute(sql, ('webmaster@python.org',))
     #        result = cursor.fetchone()
     #        print(result)
+    except:
+        print("Exception raised in mysql call")
     finally:
         connection.close()
         
+    
     return
 
 
 def data_to_db(_listdict, mysqlkeys):
-    for _dict in _listdict:
-        __mysql_connect(_dict, mysqlkeys)
+    #for _dict in _listdict:
+    # removed this section - mysql connections were taking too long in a loop. will instead add all lines in same cursor
+    __mysql_connect(_listdict, mysqlkeys)
         
     return
     
@@ -195,3 +231,82 @@ Longitude
 TripDestination
 TripStartTime
 """
+
+
+#create a connection to the counter table
+#rather than counting within the python program, gonna do all the counting from the db
+def counter(mysqlkeys):
+	#got todays date
+	today = str(date.today())
+	#check if the mysql table counter has a row with todays date. if not, add with count of 0
+	connection = pymysql.connect(host=mysqlkeys['host'],
+	user=mysqlkeys['user'],
+	password=mysqlkeys['pass'],
+	db='oc_datafeed',
+	charset='utf8mb4',
+	cursorclass=pymysql.cursors.DictCursor)
+
+	with connection.cursor() as cursor:
+		sql = 'SELECT MAX(countdate) FROM counter'
+		sql2 = 'SELECT MAX(countid) FROM counter'
+		cursor.execute(sql)
+		
+		output = cursor.fetchall()
+		
+		cursor.execute(sql2)
+		cid = cursor.fetchall()
+		for k, v in cid[0].items():
+			curcid = v
+			newcid = v + 1
+
+		for k, v in output[0].items():
+			if v is not None:
+				sqldate = v.date()
+			else:
+				sqldate = None
+		if str(sqldate) == str(today):
+			sql = 'UPDATE counter SET count = count + 1 WHERE countid=%s'
+			cursor.execute(sql, curcid)
+		
+		
+		else:
+			sql = 'INSERT INTO counter (countid, countdate, count) VALUES(%s, %s, %s)'
+			values = (newcid, today, 1)
+			cursor.execute(sql, values)
+
+
+	connection.commit()
+	connection.close()
+
+
+	return
+
+
+
+def get_counter(mysqlkeys):
+	
+	#extract counter value from the counter table
+	connection = pymysql.connect(host=mysqlkeys['host'],
+	user=mysqlkeys['user'],
+	password=mysqlkeys['pass'],
+	db='oc_datafeed',
+	charset='utf8mb4',
+	cursorclass=pymysql.cursors.DictCursor)
+
+	with connection.cursor() as cursor:
+		sql = 'SELECT MAX(countdate) FROM counter'
+		cursor.execute(sql)
+		output = cursor.fetchall()
+		for k, v in output[0].items():
+			sqldate = v.date()
+		
+		sql = 'SELECT count FROM counter WHERE countdate=%s'
+		cursor.execute(sql, sqldate)
+		
+		count = cursor.fetchall()
+
+	connection.commit()
+	connection.close()
+
+
+	return count

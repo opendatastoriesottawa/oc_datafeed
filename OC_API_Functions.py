@@ -20,8 +20,8 @@ import read_json as rj
 import mysql_connection as mysql
 
 #load stops
-stops = pd.read_csv('D:/Dougall/OpenDataStories/Posts/OC_Transpo/google_transit/stops.txt')
-stops_tway = pd.read_csv('D:/Dougall/OpenDataStories/Posts/OC_Transpo/google_transit/stops_transitway.txt')
+#stops = pd.read_csv('D:/Dougall/OpenDataStories/Posts/OC_Transpo/google_transit/stops.txt')
+stops_tway = pd.read_csv('/odscoll/oc_datafeed/oc_datafeed/stops.txt')
 
 #Function that outputs a JSON dict after making the call to the OC Transpo api
 def get_trip_from_stop(route, stop, app_id, app_key, acc_url):
@@ -96,31 +96,49 @@ def oc_job(xsec, _list, app_id, app_key, acc_url,fpath, mysqlkeys, idx):
     except:
         print("failed to extract json")
         _dict = {}
-    mysql.data_to_db(_dict, mysqlkeys)  
-    
+    try:
+        mysql.data_to_db(_dict, mysqlkeys)  
+    except:
+        print('failed to write to db')
     #_list.append(get_trip_from_stop_all(random_stop(), app_id, app_key, acc_url))
     return schedule.CancelJob  
 
 
 #Use schedule_next_job functions here
 def sched_oc_call(_list, counter, app_id, app_key, acc_url,fpath, mysqlkeys):
+    counter2 = counter
     idx = 0 #index for transitway stops
     now = datetime.datetime.now()
     midnight = datetime.datetime.combine(now.date(), datetime.time())
     _time = int((now - midnight).seconds)
 
     while True:
+        start = time.time()
         #next_sleep = sj.next_sleep(counter, _time)
-        next_sleep = 8 #for transitway, set time between calls to 8 seconds
+        next_sleep = 2 #for transitway, set time between calls to 9 seconds - found that with all db connections and stuff, this takes much longer than the amount of time specified
         if idx >= len(stops_tway): #reset when larger than index
             idx = 0
         oc_job(next_sleep, _list, app_id, app_key, acc_url, fpath, mysqlkeys,idx)
         idx += 1
+    	
+	#update the counter, then check the count
         
-        counter = sj.increase_count(counter)
+        try:
+            mysql.counter(mysqlkeys)
+            counter = mysql.get_counter(mysqlkeys)
+            print("counter  tried. counter at {}".format(counter))
+        except:
+            print('counter hit exception. not adding to counter db')
+            counter2 = sj.increase_count(counter)
+
         if counter == 9000:
             print('counter at 90%')
-        
+        try:
+            xxx = counter2 * 1
+        except:
+            counter2 = 0
+        if counter2 == 9000:
+            print('counter at 90%')
         now = datetime.datetime.now()
         _time = int((now - midnight).seconds)
        
@@ -131,15 +149,19 @@ def sched_oc_call(_list, counter, app_id, app_key, acc_url,fpath, mysqlkeys):
             _time = int((now - midnight).seconds)
             counter = sj.sleep_until_midnight(_time, counter)
             counter = sj.reset_counter()
-            
-        now = datetime.datetime.now()
-        midnight = datetime.datetime.combine(now.date(), datetime.time())
-        _time = int((now - midnight).seconds)         #deal with midnight
-        if _time > 0 and _time < 36 and counter > 4:
-            counter = sj.reset_counter()
-                
+        
+        end = time.time()
+        timer = end - start
+        print("Run took {} seconds".format(timer))
 
-
+       # THIS SHOULD NO LONGER BE NEEDED - SQL WILL RESET COUNTER AT START OF NEW DAY    
+        # now = datetime.datetime.now()
+        # midnight = datetime.datetime.combine(now.date(), datetime.time())
+        # _time = int((now - midnight).seconds)         #deal with midnight
+        # if _time > 0 and _time < 36 and counter > 4:
+        #     counter = sj.reset_counter()
+               
+        
         
     return
 

@@ -1,9 +1,11 @@
+#! /usr/bin/python3
 # -*- coding: utf-8 -*-
 """
 Created on Wed Nov 28 19:41:44 2018
 
 @author: douga
 """
+
 
 import OC_API_Functions as ocf
 import schedule
