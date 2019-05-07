@@ -8,7 +8,7 @@ Connection to a MySQL database
 """
 import pymysql.cursors
 
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import time
 
 
@@ -21,7 +21,7 @@ def __mysql_connect(_listdict, mysqlkeys):
 
     
     #use these empty lists to populate sql commands/values
-    #sqlcomms = []
+    sqlcomms = []
     sqlvals = []
 
     for _dict in _listdict:
@@ -128,21 +128,32 @@ def __mysql_connect(_listdict, mysqlkeys):
         except:
             TripStartTime = None
 
-
-
+		#if datetime object, we can now build the other datetime objects
+        if _datetime != None and AdjustedScheduleTime != None:
+            _expTime = _datetime + timedelta(minutes=AdjustedScheduleTime)
+            _expTime_nd = _expTime.strftime('%H:%M:%S')
+            _expTime_ndh = _expTime.hour
+            _expTime_ndm = _expTime.minute
+        else:
+            _expTime = None
+            _expTime_nd = None
+            _expTime_ndh = None
+            _expTime_ndm = None
+			
+			
         #create the mysql commands here in a list
         #INSERT INTO trips
-        sql = "(_datetime, _error, StopNo, StopDescription, Direction, DirectionID, RouteHeading, RouteNo, AdjustedScheduleTime, AdjustmentAge, BusType, GPSSpeed, LastTripOfSchedule, Latitude, Longitude, TripDestination, TripStartTime, expSet) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        values = (_datetime, _error, StopNo, StopDescription, Direction, DirectionID, RouteHeading, RouteNo, AdjustedScheduleTime, AdjustmentAge, BusType, GPSSpeed, LastTripOfSchedule, Latitude, Longitude, TripDestination, TripStartTime, False)
+        sql = "(_datetime, _error, StopNo, StopDescription, Direction, DirectionID, RouteHeading, RouteNo, AdjustedScheduleTime, AdjustmentAge, BusType, GPSSpeed, LastTripOfSchedule, Latitude, Longitude, TripDestination, TripStartTime, expectedTime, expectedTime_nd, expectedTime_ndh, expectedTime_ndm) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        values = (_datetime, _error, StopNo, StopDescription, Direction, DirectionID, RouteHeading, RouteNo, AdjustedScheduleTime, AdjustmentAge, BusType, GPSSpeed, LastTripOfSchedule, Latitude, Longitude, TripDestination, TripStartTime, _expTime, _expTime_nd, _expTime_ndh, _expTime_ndm)
         
-       # sqlcomms.append(sql)
+        sqlcomms.append(sql)
         sqlvals.append(values)
     
-    #upd0 = ""
-    #for j in range(len(sqlcomms)):
-    #    if j < len(sqlcomms):
-    #        sqlcomms[j] = "{},".format(sqlcomms[j])
-    #    upd0 = "{} {}".format(upd0, sqlcomms[j])
+    upd0 = ""
+    for j in range(len(sqlcomms)):
+       if j < len(sqlcomms):
+           sqlcomms[j] = "{},".format(sqlcomms[j])
+       upd0 = "{} {}".format(upd0, sqlcomms[j])
 
     #finish writing upd0
     upd0 = "INSERT INTO trips {}".format(sql)
@@ -154,33 +165,24 @@ def __mysql_connect(_listdict, mysqlkeys):
                                  db='oc_datafeed',
                                  charset='utf8mb4',
                                  cursorclass=pymysql.cursors.DictCursor)
-    try:
-        with connection.cursor() as cursor:
+    #try:
+    with connection.cursor() as cursor:
             # Create new records
-            start0 = time.time()
-            cursor.executemany(upd0, sqlvals)
-            timer0 = time.time() - start
-            print("SQL upd0 cursor took {} seconds".format(timer0))
+        cursor.executemany(upd0, sqlvals)
             #make updates to the table
-            start1 = time.time()
-            upd1 = """UPDATE trips SET expectedTime = _datetime + INTERVAL AdjustedScheduleTime MINUTE WHERE expSet=FALSE"""
-            upd2 = """UPDATE trips SET expectedTime_nd = TIME(expectedTime) WHERE expSet=FALSE"""
-            upd3 = """UPDATE trips SET expectedTime_ndh = HOUR(expectedTime_nd) WHERE expSet=FALSE"""
-            upd4 = """UPDATE trips SET expectedTime_ndm = MINUTE(expectedTime_nd) WHERE expSet=FALSE"""
-            upd5 = """ UPDATE trips SET expSet=TRUE where expSet=FALSE """
-            cursor.execute(upd1)
-            cursor.execute(upd2)
-            cursor.execute(upd3)
-            cursor.execute(upd4)
-            cursor.execute(upd5)
-            timer1 = time.time() - start1
-            print("SQL upd1-5 cursor took {} seconds".format(timer1))
+            # upd1 = """UPDATE trips SET expectedTime = _datetime + INTERVAL AdjustedScheduleTime MINUTE WHERE expSet=FALSE"""
+            # upd2 = """UPDATE trips SET expectedTime_nd = TIME(expectedTime) WHERE expSet=FALSE"""
+            # upd3 = """UPDATE trips SET expectedTime_ndh = HOUR(expectedTime_nd) WHERE expSet=FALSE"""
+            # upd4 = """UPDATE trips SET expectedTime_ndm = MINUTE(expectedTime_nd) WHERE expSet=FALSE"""
+            # upd5 = """ UPDATE trips SET expSet=TRUE where expSet=FALSE """
+            # cursor.execute(upd1)
+            # cursor.execute(upd2)
+            # cursor.execute(upd3)
+            # cursor.execute(upd4)
+            # cursor.execute(upd5)
         # connection is not autocommit by default. So you must commit to save
         # your changes.
-        start2 = time.time()
-        connection.commit()
-        timer2 = time.time() - start
-        print("SQL connection took {} seconds".format(timer2))
+    connection.commit()
 
     #    with connection.cursor() as cursor:
     #        # Read a single record
@@ -188,10 +190,10 @@ def __mysql_connect(_listdict, mysqlkeys):
     #        cursor.execute(sql, ('webmaster@python.org',))
     #        result = cursor.fetchone()
     #        print(result)
-    except:
-        print("Exception raised in mysql call")
-    finally:
-        connection.close()
+    #except:
+        #print("Exception raised in mysql call")
+    #finally:
+    connection.close()
         
     
     return

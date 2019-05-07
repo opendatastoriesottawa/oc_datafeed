@@ -20,8 +20,8 @@ import read_json as rj
 import mysql_connection as mysql
 
 #load stops
-#stops = pd.read_csv('D:/Dougall/OpenDataStories/Posts/OC_Transpo/google_transit/stops.txt')
-stops_tway = pd.read_csv('/odscoll/oc_datafeed/oc_datafeed/stops.txt')
+stops_tway = pd.read_csv('D:/Dougall/OpenDataStories/Posts/OC_Transpo/google_transit/stops.txt')
+#stops_tway = pd.read_csv('/odscoll/oc_datafeed/oc_datafeed/stops.txt')
 
 #Function that outputs a JSON dict after making the call to the OC Transpo api
 def get_trip_from_stop(route, stop, app_id, app_key, acc_url):
@@ -96,10 +96,11 @@ def oc_job(xsec, _list, app_id, app_key, acc_url,fpath, mysqlkeys, idx):
     except:
         print("failed to extract json")
         _dict = {}
-    try:
-        mysql.data_to_db(_dict, mysqlkeys)  
-    except:
-        print('failed to write to db')
+    #try:
+    mysql.data_to_db(_dict, mysqlkeys)  
+        #mysql.data_to_db(_dict, mysqlkeys)  
+    #except:
+     #   print('failed to write to db')
     #_list.append(get_trip_from_stop_all(random_stop(), app_id, app_key, acc_url))
     return schedule.CancelJob  
 
